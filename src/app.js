@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
-import { healthCheck } from "./middlewares/helthcheck.controller.js";
+import { healthCheck } from "./controller/helthcheck.controller.js";
+import { authRouter } from "./routes/auth.router.js";
 
 export const app = express();
 
@@ -16,11 +17,12 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+  })
 );
 
-//import the router
-app.use("/api/v1/healthcheck",healthCheck)
+// routers
+app.use("/api/v1/healthcheck", healthCheck);
+app.use("/api/v1/auth", authRouter);
 
 app.get("/", (req, res) => {
   res.send("hello Deepak");
