@@ -4,7 +4,6 @@ import { ApiError } from "../utils/api-errors.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { emailVerificationMailgenContent, sendEmail } from "../utils/mail.js";
 
-
 // Generate Access & Refresh Tokens
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -102,7 +101,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
 //Login
 const login = asyncHandler(async (req, res) => {
-
   const { email, password } = req.body;
 
   // Check email
@@ -125,12 +123,13 @@ const login = asyncHandler(async (req, res) => {
   }
 
   // Generate tokens
-  const { accessToken, refreshToken } =
-    await generateAccessAndRefreshTokens(user._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+    user._id,
+  );
 
   // Remove sensitive fields
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry",
   );
 
   const options = {
@@ -148,11 +147,44 @@ const login = asyncHandler(async (req, res) => {
         {
           user: loggedInUser,
           accessToken,
-          refreshToken
+          refreshToken,
         },
-        "User logged in successfully"
-      )
+        "User logged in successfully",
+      ),
     );
 });
 
-export { registerUser, generateAccessAndRefreshTokens,login };
+//LogOut
+const logOutUser = asyncHandler(async (req, res) => {
+
+  // remove refresh token from database
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        refreshToken: ""
+      }
+    },
+    { new: true }
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: false   // change to true in production (HTTPS)
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        "User logged out successfully"
+      )
+    );
+
+});
+
+export { registerUser, generateAccessAndRefreshTokens, login, logOutUser };
