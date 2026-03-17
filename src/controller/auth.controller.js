@@ -4,49 +4,68 @@ import { ApiError } from "../utils/api-errors.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import {
   emailVerificationMailgenContent,
- 
   sendEmail,
 } from "../utils/mail.js";
 
 
+// Generate Access & Refresh Tokens
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
+
     const user = await User.findById(userId);
+
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
     user.refreshToken = refreshToken;
+
     await user.save({ validateBeforeSave: false });
+
     return { accessToken, refreshToken };
+
   } catch (error) {
+
     throw new ApiError(
       500,
-      "Something went wrong while generating access token",
+      "Something went wrong while generating access token"
     );
+
   }
 };
 
+
+// Register User
 const registerUser = asyncHandler(async (req, res) => {
+
   const { email, username, password } = req.body;
 
-  // check if user already exists
+  // Validate fields
+  if (!email || !username || !password) {
+    throw new ApiError(400, "Email, Username and Password are required");
+  }
+
+  // Trim values
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanUsername = username.trim().toLowerCase();
+
+  // Check if user exists
   const existingUser = await User.findOne({
-    $or: [{ username }, { email }],
+    $or: [{ username: cleanUsername }, { email: cleanEmail }],
   });
 
   if (existingUser) {
     throw new ApiError(409, "User with email or username already exists");
   }
 
-  // create user
+  // Create user
   const user = await User.create({
-    email,
-    username,
+    email: cleanEmail,
+    username: cleanUsername,
     password,
     isEmailVerified: false,
   });
 
-  // generate email verification token
+  // Generate email verification token
   const { unHashedToken, hashedToken, tokenExpiry } =
     user.generateTemporaryToken();
 
@@ -55,12 +74,12 @@ const registerUser = asyncHandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
-  // verification link
+  // Verification URL
   const verificationUrl = `${req.protocol}://${req.get(
     "host"
   )}/api/v1/auth/verify-email/${unHashedToken}`;
 
-  // send verification email
+  // Send verification email
   await sendEmail({
     email: user.email,
     subject: "Please verify your email",
@@ -70,7 +89,7 @@ const registerUser = asyncHandler(async (req, res) => {
     ),
   });
 
-  // remove sensitive fields
+  // Remove sensitive fields
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
@@ -86,6 +105,7 @@ const registerUser = asyncHandler(async (req, res) => {
       "User registered successfully. Verification email sent."
     )
   );
+
 });
 
-export { registerUser };
+export { registerUser, generateAccessAndRefreshTokens };

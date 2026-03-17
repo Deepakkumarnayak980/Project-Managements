@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import { healthCheck } from "./controller/helthcheck.controller.js";
 import { authRouter } from "./routes/auth.router.js";
+import cookieParser from "cookie-parser";
+
 
 export const app = express();
 
@@ -9,6 +11,8 @@ export const app = express();
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
+app.use(cookieParser())
+
 
 // cors configuration
 app.use(
