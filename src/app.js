@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { healthCheck } from "./controller/helthcheck.controller.js";
-import { authRouter } from "./routes/auth.router.js";
+import {  router } from "./routes/auth.router.js";
 import cookieParser from "cookie-parser";
 
 
@@ -26,7 +26,7 @@ app.use(
 
 // routers
 app.use("/api/v1/healthcheck", healthCheck);
-app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/auth", router);
 
 app.get("/", (req, res) => {
   res.send("hello Deepak");
