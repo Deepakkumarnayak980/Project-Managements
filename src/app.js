@@ -1,33 +1,31 @@
 import express from "express";
 import cors from "cors";
-import { healthCheck } from "./controller/helthcheck.controller.js";
-import {  router } from "./routes/auth.router.js";
 import cookieParser from "cookie-parser";
 
+import { healthCheck } from "./controller/helthcheck.controller.js";
+import { router } from "./routes/auth.router.js";
 
 export const app = express();
 
-// basic configuration
-app.use(express.json({ limit: "16kb" }));
-app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-app.use(express.static("public"));
-app.use(cookieParser())
-
-
-// cors configuration
+// ✅ CORS FIRST
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173"],
+    origin: "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// routers
+// body parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// cookie parser
+app.use(cookieParser());
+
+// routes
 app.use("/api/v1/healthcheck", healthCheck);
 app.use("/api/v1/auth", router);
 
 app.get("/", (req, res) => {
-  res.send("hello Deepak");
+  res.send("Server running");
 });
